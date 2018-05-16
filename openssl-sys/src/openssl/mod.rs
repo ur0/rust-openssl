@@ -1,4 +1,5 @@
-use libc::{c_int, c_long, c_uchar, c_uint, c_ulong};
+use libc::{c_int, c_long, c_char, c_uchar, c_uint, c_ulong, c_void};
+use ASN1_OBJECT;
 
 #[cfg(not(ossl110))]
 mod v10x;
@@ -60,6 +61,7 @@ pub const CMS_DEBUG_DECRYPT: c_uint = 0x20000;
 pub const CMS_KEY_PARAM: c_uint = 0x40000;
 
 extern "C" {
+    pub fn OBJ_txt2obj(oid: *const c_char, no_name: c_int) -> *mut ASN1_OBJECT;
     pub fn CMS_decrypt(
         cms: *mut ::CMS_ContentInfo,
         pkey: *mut ::EVP_PKEY,
@@ -77,6 +79,40 @@ extern "C" {
         data: *mut ::BIO,
         flags: c_uint,
     ) -> *mut ::CMS_ContentInfo;
+    pub fn CMS_add1_signer(
+        cms: *mut ::CMS_ContentInfo,
+        signcert: *mut X509,
+        pkey: *mut EVP_PKEY,
+        md: *const ::EVP_MD,
+        flags: c_uint,
+    ) -> *mut ::CMS_SignerInfo;
+    pub fn CMS_final(
+        cms: *mut ::CMS_ContentInfo,
+        data: *mut BIO,
+        dcont: *mut BIO,
+        flags: c_uint,
+    ) -> c_int;
+    pub fn CMS_verify(
+        cms: *mut ::CMS_ContentInfo,
+        certs: *mut stack_st_X509,
+        store: *mut ::X509_STORE,
+        indata: *mut BIO,
+        out: *mut BIO,
+        flags: c_uint,
+    ) -> c_int;
+    pub fn d2i_CMS_ContentInfo(
+        a: *mut *mut ::CMS_ContentInfo,
+        ppin: *mut *const c_uchar,
+        length: c_long,
+    ) -> *mut ::CMS_ContentInfo;
+    pub fn CMS_signed_add1_attr_by_OBJ(
+        si: *mut ::CMS_SignerInfo,
+        obj: *const ::ASN1_OBJECT,
+        bytes_type: c_int,
+        bytes: *const c_void,
+        len: c_int,
+    ) -> c_int;
+    pub fn CMS_SignerInfo_sign(si: *mut ::CMS_SignerInfo) -> c_int;
     pub fn i2d_CMS_ContentInfo(a: *mut ::CMS_ContentInfo, pp: *mut *mut c_uchar) -> c_int;
 
     pub fn FIPS_mode_set(onoff: c_int) -> c_int;

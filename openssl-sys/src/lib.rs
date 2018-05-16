@@ -28,6 +28,7 @@ pub enum ASN1_OBJECT {}
 pub enum BN_CTX {}
 pub enum BN_GENCB {}
 pub enum CMS_ContentInfo {}
+pub enum CMS_SignerInfo {}
 pub enum CONF {}
 pub enum CONF_METHOD {}
 pub enum COMP_METHOD {}
