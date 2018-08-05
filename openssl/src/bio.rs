@@ -66,6 +66,10 @@ impl MemBio {
             slice::from_raw_parts(ptr as *const _ as *const _, len as usize)
         }
     }
+
+    pub fn from_ptr(p: *mut ffi::BIO) -> MemBio {
+        MemBio(p)
+    }
 }
 
 cfg_if! {

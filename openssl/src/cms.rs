@@ -228,18 +228,29 @@ impl CmsContentInfoRef {
                 None => ptr::null_mut(),
             };
             let out_data = match output_data {
-                Some(data) => MemBioSlice::new(data)?.as_ptr(),
+                Some(_) => Some(MemBio::new()?),
+                None => None,
+            };
+            let out_data_ptr = match out_data {
+                Some(d) => d.as_ptr(),
                 None => ptr::null_mut(),
             };
 
-            Ok(cvt_n(ffi::CMS_verify(
+            let is_valid = cvt_n(ffi::CMS_verify(
                 self.as_ptr(),
                 certs,
                 store,
                 in_data,
-                out_data,
+                out_data_ptr.clone(),
                 flags.bits(),
-            ))? == 1)
+            ))? == 1;
+
+            match output_data {
+                Some(data) => data.copy_from_slice(MemBio::from_ptr(out_data_ptr).get_buf()),
+                None => {}
+            };
+
+            Ok(is_valid)
         }
     }
 }
