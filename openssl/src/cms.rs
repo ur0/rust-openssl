@@ -210,7 +210,8 @@ impl CmsContentInfoRef {
         &mut self,
         certs: Option<&Stack<X509>>,
         store: Option<&X509Store>,
-        data: &[u8],
+        data: Option<&[u8]>,
+        output_data: Option<&mut [u8]>,
         flags: CMSOptions,
     ) -> Result<bool, ErrorStack> {
         unsafe {
@@ -222,13 +223,21 @@ impl CmsContentInfoRef {
                 Some(store) => store.as_ptr(),
                 None => ptr::null_mut(),
             };
+            let in_data = match data {
+                Some(data) => MemBioSlice::new(data)?.as_ptr(),
+                None => ptr::null_mut(),
+            };
+            let out_data = match output_data {
+                Some(data) => MemBioSlice::new(data)?.as_ptr(),
+                None => ptr::null_mut(),
+            };
 
             Ok(cvt_n(ffi::CMS_verify(
                 self.as_ptr(),
                 certs,
                 store,
-                MemBioSlice::new(data)?.as_ptr(),
-                ptr::null_mut(),
+                in_data,
+                out_data,
                 flags.bits(),
             ))? == 1)
         }
