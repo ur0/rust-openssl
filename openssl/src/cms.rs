@@ -18,7 +18,7 @@ use libc::c_uint;
 use pkey::{HasPrivate, PKeyRef};
 use stack::{Stack, StackRef};
 use x509::store::X509Store;
-use x509::{X509, X509Ref};
+use x509::{X509Ref, X509};
 use {cvt, cvt_n, cvt_p};
 
 pub struct CmsSignerInfoRef(Opaque);
@@ -82,7 +82,6 @@ bitflags! {
         const REUSE_DIGEST = ffi::CMS_REUSE_DIGEST;
         const USE_KEYID = ffi::CMS_USE_KEYID;
         const DEBUG_DECRYPT = ffi::CMS_DEBUG_DECRYPT;
-        #[cfg(all(not(libressl), not(ossl101)))]
         const KEY_PARAM = ffi::CMS_KEY_PARAM;
         #[cfg(all(not(libressl), not(ossl101), not(ossl102)))]
         const ASCIICRLF = ffi::CMS_ASCIICRLF;
@@ -184,12 +183,20 @@ impl CmsContentInfoRef {
 
     pub fn finalize(
         &mut self,
-        data: &[u8],
+        data: Option<&[u8]>,
         dcont: Option<&MemBioSlice>,
         flags: CMSOptions,
     ) -> Result<(), ErrorStack> {
         unsafe {
-            let bio = MemBioSlice::new(data)?;
+            let data_bio = match data {
+                Some(d) => Some(MemBioSlice::new(d)?),
+                None => None,
+            };
+            let data_ptr = match data_bio {
+                Some(b) => b.as_ptr(),
+                None => ptr::null_mut(),
+            };
+
             let dcont_ptr = match dcont {
                 Some(p) => p.as_ptr(),
                 None => ptr::null_mut(),
@@ -197,7 +204,7 @@ impl CmsContentInfoRef {
 
             cvt(ffi::CMS_final(
                 self.as_ptr(),
-                bio.as_ptr(),
+                data_ptr,
                 dcont_ptr,
                 flags.bits(),
             ))?;
@@ -314,9 +321,18 @@ impl CmsContentInfo {
     pub fn partial(
         certs: Option<&Stack<X509>>,
         flags: CMSOptions,
+        data: Option<&[u8]>,
     ) -> Result<CmsContentInfo, ErrorStack> {
         let certs = match certs {
             Some(certs) => certs.as_ptr(),
+            None => ptr::null_mut(),
+        };
+        let data_bio = match data {
+            Some(d) => Some(MemBioSlice::new(d)?),
+            None => None,
+        };
+        let data_ptr = match data_bio {
+            Some(b) => b.as_ptr(),
             None => ptr::null_mut(),
         };
 
@@ -325,7 +341,7 @@ impl CmsContentInfo {
                 ptr::null_mut(),
                 ptr::null_mut(),
                 certs,
-                ptr::null_mut(),
+                data_ptr,
                 flags.bits(),
             ))?))
         }
