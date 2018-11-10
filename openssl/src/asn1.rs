@@ -278,11 +278,13 @@ impl Asn1Object {
     /// Returns an ASN1_object from a given OID in text form.
     pub fn from_txt(oid: &str, no_name: bool) -> Asn1Object {
         unsafe {
-            Asn1Object::from_ptr(ffi::OBJ_txt2obj(
-                CString::new(oid).unwrap().as_ptr(),
-                no_name as c_int,
-            ))
+            let oid = CString::new(oid).unwrap();
+            Asn1Object::from_ptr(ffi::OBJ_txt2obj(oid.as_ptr(), no_name as c_int))
         }
+    }
+    /// Returns an ASN1_object from a given NID
+    pub fn from_nid(nid: Nid) -> Asn1Object {
+        unsafe { Asn1Object::from_ptr(ffi::OBJ_nid2obj(nid.as_raw())) }
     }
 }
 

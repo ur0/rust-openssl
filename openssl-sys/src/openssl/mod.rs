@@ -1,4 +1,4 @@
-use libc::{c_int, c_long, c_char, c_uchar, c_uint, c_ulong, c_void};
+use libc::{c_char, c_int, c_long, c_uchar, c_uint, c_ulong, c_void};
 use ASN1_OBJECT;
 
 #[cfg(not(ossl110))]
@@ -62,6 +62,7 @@ pub const CMS_KEY_PARAM: c_uint = 0x40000;
 
 extern "C" {
     pub fn OBJ_txt2obj(oid: *const c_char, no_name: c_int) -> *mut ASN1_OBJECT;
+    pub fn OBJ_nid2obj(nid: c_int) -> *mut ASN1_OBJECT;
     pub fn CMS_decrypt(
         cms: *mut ::CMS_ContentInfo,
         pkey: *mut ::EVP_PKEY,
